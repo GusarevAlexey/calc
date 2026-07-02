@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Проверка фазировки трансформаторов</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Фазировка Тр">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 16px;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        h1 {
+            font-size: 1.8rem;
+            color: #0b5e7c;
+            border-bottom: 3px solid #0b5e7c;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+        h1 small {
+            font-size: 1rem;
+            display: block;
+            font-weight: normal;
+            color: #475569;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .card-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #0b5e7c;
+        }
+        .conditions-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px 0;
+        }
+        .cond-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 12px;
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .cond-row:last-child { border-bottom: none; }
+        .cond-label {
+            font-weight: 500;
+            min-width: 140px;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+        .cond-col {
+            flex: 1 1 0;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 4px;
+            background: #f8fafc;
+            padding: 6px 8px;
+            border-radius: 6px;
+            min-width: 120px;
+        }
+        .cond-col .col-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .cond-col .col-content {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 6px;
+        }
+        .cond-col .col-content select,
+        .cond-col .col-content input {
+            padding: 4px 6px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: white;
+            flex: 1 1 60px;
+            min-width: 50px;
+        }
+        .cond-col .col-content .group-display {
+            font-weight: 600;
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            min-width: 30px;
+            text-align: center;
+        }
+        .cond-col .col-content .k-display {
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: #0b5e7c;
+            white-space: nowrap;
+        }
+        .cond-status {
+            font-size: 1.5rem;
+            min-width: 36px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .cond-status.ok { color: #22c55e; }
+        .cond-status.fail { color: #ef4444; }
+        .cond-status.waiting { color: #94a3b8; }
+        .btn {
+            background: #0b5e7c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin-right: 8px;
+            margin-top: 4px;
+        }
+        .btn:hover { background: #094a63; }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .btn-secondary {
+            background: #64748b;
+        }
+        .btn-secondary:hover { background: #475569; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 6px;
+            text-align: center;
+        }
+        th { background: #e2e8f0; font-weight: 600; }
+        input[type="number"] {
+            width: 70px;
+            padding: 6px 2px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1rem;
+        }
+        .result-box {
+            background: #f1f5f9;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 5px solid #0b5e7c;
+            margin-top: 16px;
+            overflow-x: auto;
+        }
+        .result-box hr { margin: 12px 0; }
+        .highlight { color: #dc2626; font-weight: 700; }
+        .success { color: #16a34a; font-weight: 700; }
+        .warning { color: #d97706; font-weight: 700; }
+        .footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+            margin-top: 24px;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-content h2 {
+            color: #0b5e7c;
+            margin-top: 0;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+        .modal-content h3 {
+            color: #0b5e7c;
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+        .modal-content ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+        .modal-content li {
+            margin-bottom: 6px;
+        }
+        .modal-close {
+            position: sticky;
+            top: 0;
+            float: right;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -8px;
+            margin-right: -8px;
+        }
+        .modal-close:hover { background: #cbd5e1; }
+        .modal-content .platform-tag {
+            display: inline-block;
+            background: #0b5e7c;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        @media (max-width: 700px) {
+            .cond-row { flex-direction: column; align-items: stretch; gap: 6px; }
+            .cond-label { min-width: unset; font-weight: 600; margin-bottom: 2px; }
+            .cond-col { flex: 1 1 auto; }
+            .cond-status { align-self: flex-start; margin-top: 4px; }
+            .cond-col .col-content { flex-wrap: wrap; }
+            .cond-col .col-content select,
+            .cond-col .col-content input { flex: 1 1 70px; min-width: 60px; }
+            input[type="number"] { width: 100%; }
+            .btn { width: 100%; margin-bottom: 6px; }
+            .modal-content { padding: 16px; margin: 8px; }
+        }
+    </style>
+</head>
+<body>
+<h1><center>🔌 Проверка трансформаторов</center><small><center>при подготовке к параллельной работе</center></small></h1>
+<div class="card">
+    <div class="cond-row" style="border-bottom: none; gap: 8px 16px;">
+        <span class="cond-label" style="min-width: 140px;">Напряжение НН (В):</span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1;">
+            <select id="unomSelect" style="flex: 1 1 100px;">
+                <option value="100">100</option>
+                <option value="220">220</option>
+                <option value="380" selected>380</option>
+                <option value="400">400</option>
+                <option value="690">690</option>
+                <option value="custom">Своё</option>
+            </select>
+            <input type="number" id="unomCustom" value="380" step="10" min="0" style="display:none; width:100px; flex: 0 0 auto;">
+        </div>
+    </div>
+    <div class="cond-row" style="border-bottom: none; gap: 8px 16px;">
+        <span class="cond-label" style="min-width: 140px;">ПБВ (РПН) (%):</span>
+        <input type="number" id="thresholdPercent" value="0" step="1" min="0" max="30" style="width:80px; flex: 0 0 auto;">
+        <span style="font-size:0.9rem; color:#64748b;">разница положений (0-30%)</span>
+    </div>
+    <div class="cond-row" style="border-bottom: none; gap: 8px 16px;">
+        <span class="cond-label" style="min-width: 140px;">Чередование НН:</span>
+        <label><input type="checkbox" id="hvSequenceCheck"> проверено</label>
+    </div>
+</div>
+<div class="card">
+    <div class="card-title"><center>✅ Условия параллельной работы</center></div>
+    <div style="font-size:0.9rem; color:#475569; text-align:center; margin-bottom:10px;">данные брать с шильдика трансформатора</div>
+    <div class="conditions-grid">
+        <div class="cond-row" style="border-bottom: 2px solid #cbd5e1; padding-bottom: 4px;">
+            <span class="cond-label" style="font-weight: 600;">Параметр</span>
+            <div class="cond-col" style="background: transparent; padding: 0;"><span class="col-title" style="font-size:0.8rem; color:#0b5e7c;">Трансформатор 1</span></div>
+            <div class="cond-col" style="background: transparent; padding: 0;"><span class="col-title" style="font-size:0.8rem; color:#0b5e7c;">Трансформатор 2</span></div>
+            <span class="cond-status" style="font-size:1rem; color:#94a3b8;">Статус</span>
+        </div>
+
+        <div class="cond-row">
+            <span class="cond-label">Группа соединений</span>
+            <div class="cond-col">
+                <div class="col-content">
+                    <select id="hv1" style="flex:1 1 60px;">
+                        <option value="" disabled selected>ВН</option>
+                        <option value="Y">Y</option>
+                        <option value="Yn">Yn</option>
+                        <option value="D">D</option>
+                        <option value="Z">Z</option>
+                        <option value="Zn">Zn</option>
+                    </select>
+                    <select id="lv1" style="flex:1 1 60px;">
+                        <option value="" disabled selected>НН</option>
+                        <option value="Y">Y</option>
+                        <option value="Yn">Yn</option>
+                        <option value="D">D</option>
+                        <option value="Z">Z</option>
+                        <option value="Zn">Zn</option>
+                    </select>
+                    <span class="group-display" id="groupDisplay1">?</span>
+                </div>
+            </div>
+            <div class="cond-col">
+                <div class="col-content">
+                    <select id="hv2" style="flex:1 1 60px;">
+                        <option value="" disabled selected>ВН</option>
+                        <option value="Y">Y</option>
+                        <option value="Yn">Yn</option>
+                        <option value="D">D</option>
+                        <option value="Z">Z</option>
+                        <option value="Zn">Zn</option>
+                    </select>
+                    <select id="lv2" style="flex:1 1 60px;">
+                        <option value="" disabled selected>НН</option>
+                        <option value="Y">Y</option>
+                        <option value="Yn">Yn</option>
+                        <option value="D">D</option>
+                        <option value="Z">Z</option>
+                        <option value="Zn">Zn</option>
+                    </select>
+                    <span class="group-display" id="groupDisplay2">?</span>
+                </div>
+            </div>
+            <span class="cond-status fail" id="status-group">❌</span>
+        </div>
+
+        <div class="cond-row">
+            <span class="cond-label">ВН/НН (кВ/В)</span>
+            <div class="cond-col">
+                <div class="col-content">
+                    <input type="number" id="vh1" placeholder="кВ" step="0.01" min="0" style="flex:1 1 60px;"> /
+                    <input type="number" id="vl1" placeholder="В" step="1" min="0" style="flex:1 1 60px;">
+                    <span class="k-display" id="k1Display">k1 = ?</span>
+                </div>
+            </div>
+            <div class="cond-col">
+                <div class="col-content">
+                    <input type="number" id="vh2" placeholder="кВ" step="0.01" min="0" style="flex:1 1 60px;"> /
+                    <input type="number" id="vl2" placeholder="В" step="1" min="0" style="flex:1 1 60px;">
+                    <span class="k-display" id="k2Display">k2 = ?</span>
+                </div>
+            </div>
+            <span class="cond-status fail" id="status-voltage">❌</span>
+        </div>
+
+        <div class="cond-row">
+            <span class="cond-label">U<sub>кз</sub> (%)</span>
+            <div class="cond-col">
+                <div class="col-content">
+                    <input type="number" id="uk1" placeholder="%" step="0.1" min="0" style="flex:1;">
+                </div>
+            </div>
+            <div class="cond-col">
+                <div class="col-content">
+                    <input type="number" id="uk2" placeholder="%" step="0.1" min="0" style="flex:1;">
+                </div>
+            </div>
+            <span class="cond-status fail" id="status-uk">❌</span>
+        </div>
+
+        <div class="cond-row">
+            <span class="cond-label">Мощность (кВА)</span>
+            <div class="cond-col">
+                <div class="col-content">
+                    <input type="number" id="s1" placeholder="кВА" step="1" min="0" style="flex:1;">
+                </div>
+            </div>
+            <div class="cond-col">
+                <div class="col-content">
+                    <input type="number" id="s2" placeholder="кВА" step="1" min="0" style="flex:1;">
+                </div>
+            </div>
+            <span class="cond-status fail" id="status-power">❌</span>
+        </div>
+    </div>
+    <div id="conditions-result" style="margin-top:12px; font-weight:600; text-align:center;"></div>
+</div>
+<div class="card">
+    <div class="card-title"><center>📊 Измеренные вторичные напряжения (В)</center></div>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead><tr><th>U (НН)</th><th>a2</th><th>b2</th><th>c2</th></tr></thead>
+            <tbody>
+                <tr><td><b>a1</b></td><td><input type="number" step="0.1" min="0" id="a1a2" placeholder="0"></td><td><input type="number" step="0.1" min="0" id="a1b2" placeholder="~Uном"></td><td><input type="number" step="0.1" min="0" id="a1c2" placeholder="~Uном"></td></tr>
+                <tr><td><b>b1</b></td><td><input type="number" step="0.1" min="0" id="b1a2" placeholder="~Uном"></td><td><input type="number" step="0.1" min="0" id="b1b2" placeholder="0"></td><td><input type="number" step="0.1" min="0" id="b1c2" placeholder="~Uном"></td></tr>
+                <tr><td><b>c1</b></td><td><input type="number" step="0.1" min="0" id="c1a2" placeholder="~Uном"></td><td><input type="number" step="0.1" min="0" id="c1b2" placeholder="~Uном"></td><td><input type="number" step="0.1" min="0" id="c1c2" placeholder="0"></td></tr>
+            </tbody>
+        </table>
+    </div>
+    <center><button class="btn" onclick="calculate()" style="margin-top:10px;">⚡ Проверить фазировку</button></center>
+</div>
+<div id="result" class="result-box">▼ Результат проверки фазировки</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px;">
+    <button class="btn btn-secondary" onclick="openModal()">📖 Инструкция по установке</button>
+</div>
+<div class="footer"><center>Калькулятор разработан для удобства пользования в 2026 году</center></div>
+<div class="modal-overlay" id="installModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <h2>📱 Инструкция по установке</h2>
+        <p style="color:#475569; margin-bottom: 16px;">Это приложение можно установить на устройство для быстрого доступа как к обычному приложению.</p>
+
+        <h3><span class="platform-tag">iOS</span> iPhone / iPad</h3>
+        <ol>
+            <li>Откройте эту страницу в браузере <strong>Safari</strong>.</li>
+            <li>Нажмите на кнопку <strong>«Поделиться»</strong> (квадрат со стрелкой внизу экрана).</li>
+            <li>Прокрутите вниз и выберите <strong>«На экран «Домой»</strong>.</li>
+            <li>Нажмите <strong>«Добавить»</strong> — иконка появится на рабочем столе.</li>
+        </ol>
+
+        <h3><span class="platform-tag">Android</span> Смартфон / Планшет</h3>
+        <ol>
+            <li>Откройте страницу в браузере <strong>Chrome</strong>.</li>
+            <li>Нажмите на <strong>три точки</strong> в правом верхнем углу.</li>
+            <li>Выберите <strong>«Установить приложение»</strong> или <strong>«На экран "Домой"»</strong>.</li>
+            <li>Подтвердите установку — ярлык появится на рабочем столе.</li>
+        </ol>
+
+        <h3><span class="platform-tag">Windows</span> Компьютер / Ноутбук</h3>
+        <ol>
+            <li>Откройте страницу в браузере <strong>Edge</strong> или <strong>Chrome</strong>.</li>
+            <li>В адресной строке найдите значок <strong>«Установить приложение»</strong> (монитор с иконкой).</li>
+            <li>Нажмите на него и выберите <strong>«Установить»</strong>.</li>
+            <li>Приложение появится в меню «Пуск» и на рабочем столе (по желанию).</li>
+        </ol>
+
+        <p style="margin-top: 16px; font-size: 0.9rem; color: #94a3b8;">
+            💡 После установки приложение будет работать офлайн (если страница уже загружена).
+        </p>
+    </div>
+</div>
+<script>
+    function getUnom() {
+        const select = document.getElementById('unomSelect');
+        if (select.value === 'custom') {
+            return parseFloat(document.getElementById('unomCustom').value) || 380;
+        }
+        return parseFloat(select.value) || 380;
+    }
+    function getGroup(hv, lv) {
+        if (hv === '' || lv === '') return '?';
+        const map = {
+            'Y_Y':'0','Y_Yn':'0','Yn_Y':'0','Yn_Yn':'0',
+            'Z_Z':'0','Zn_Zn':'0','Z_Zn':'0','Zn_Z':'0',
+            'D_D':'0',
+            'Y_D':'11','Yn_D':'11','D_Y':'11','D_Yn':'11',
+            'Y_Z':'11','Z_Y':'11','D_Z':'11','Z_D':'11',
+            'Yn_Z':'11','Z_Yn':'11',
+            'Y_Zn':'11','Zn_Y':'11','Yn_Zn':'11','Zn_Yn':'11',
+            'D_Zn':'11','Zn_D':'11'
+        };
+        return map[hv+'_'+lv] || '?';
+    }
+    function checkConditions() {
+        let allOk = true;
+
+        const hv1 = document.getElementById('hv1').value;
+        const lv1 = document.getElementById('lv1').value;
+        const hv2 = document.getElementById('hv2').value;
+        const lv2 = document.getElementById('lv2').value;
+        const g1 = getGroup(hv1, lv1);
+        const g2 = getGroup(hv2, lv2);
+        document.getElementById('groupDisplay1').textContent = g1;
+        document.getElementById('groupDisplay2').textContent = g2;
+        const stG = document.getElementById('status-group');
+        if (hv1 === '' || lv1 === '' || hv2 === '' || lv2 === '') {
+            stG.textContent = '❌';
+            stG.className = 'cond-status fail';
+            allOk = false;
+        } else if (g1 !== '?' && g2 !== '?' && g1 === g2) {
+            stG.textContent = '✅';
+            stG.className = 'cond-status ok';
+        } else {
+            stG.textContent = '❌';
+            stG.className = 'cond-status fail';
+            allOk = false;
+        }
+        const vh1 = parseFloat(document.getElementById('vh1').value);
+        const vl1 = parseFloat(document.getElementById('vl1').value);
+        const vh2 = parseFloat(document.getElementById('vh2').value);
+        const vl2 = parseFloat(document.getElementById('vl2').value);
+        let k1=NaN, k2=NaN;
+        if (vh1 && vl1 && !isNaN(vh1) && !isNaN(vl1) && vl1!==0) k1 = vh1*1000/vl1;
+        if (vh2 && vl2 && !isNaN(vh2) && !isNaN(vl2) && vl2!==0) k2 = vh2*1000/vl2;
+        document.getElementById('k1Display').textContent = isNaN(k1) ? 'k1 = ?' : `k1 = ${k1.toFixed(3)}`;
+        document.getElementById('k2Display').textContent = isNaN(k2) ? 'k2 = ?' : `k2 = ${k2.toFixed(3)}`;
+        const stV = document.getElementById('status-voltage');
+        if (!isNaN(k1) && !isNaN(k2) && k1>0 && k2>0) {
+            if (Math.abs(k1-k2)/Math.max(k1,k2) <= 0.005) {
+                stV.textContent = '✅';
+                stV.className = 'cond-status ok';
+            } else {
+                stV.textContent = '❌';
+                stV.className = 'cond-status fail';
+                allOk = false;
+            }
+        } else {
+            stV.textContent = '❌';
+            stV.className = 'cond-status fail';
+            allOk = false;
+        }
+        const uk1 = parseFloat(document.getElementById('uk1').value);
+        const uk2 = parseFloat(document.getElementById('uk2').value);
+        const stU = document.getElementById('status-uk');
+        if (uk1 && uk2 && !isNaN(uk1) && !isNaN(uk2) && uk1>0 && uk2>0) {
+            if (Math.abs(uk1-uk2)/Math.max(uk1,uk2) <= 0.1) {
+                stU.textContent = '✅';
+                stU.className = 'cond-status ok';
+            } else {
+                stU.textContent = '❌';
+                stU.className = 'cond-status fail';
+                allOk = false;
+            }
+        } else {
+            stU.textContent = '❌';
+            stU.className = 'cond-status fail';
+            allOk = false;
+        }
+        const s1 = parseFloat(document.getElementById('s1').value);
+        const s2 = parseFloat(document.getElementById('s2').value);
+        const stP = document.getElementById('status-power');
+        if (s1 && s2 && !isNaN(s1) && !isNaN(s2) && s1>0 && s2>0) {
+            if (Math.max(s1,s2)/Math.min(s1,s2) <= 3) {
+                stP.textContent = '✅';
+                stP.className = 'cond-status ok';
+            } else {
+                stP.textContent = '❌';
+                stP.className = 'cond-status fail';
+                allOk = false;
+            }
+        } else {
+            stP.textContent = '❌';
+            stP.className = 'cond-status fail';
+            allOk = false;
+        }
+        document.getElementById('conditions-result').innerHTML = allOk
+            ? '<span style="color:#16a34a;">✅ Все условия выполнены. Можно приступать к фазировке трансформаторов.</span>'
+            : '<span style="color:#dc2626;">❌ Условия НЕ выполнены. Проверьте индикаторы.</span>';
+        return allOk;
+    }
+      function calculate() {
+        const U_nom = getUnom();
+        const thresholdPercent = parseFloat(document.getElementById('thresholdPercent').value) || 0;
+        const threshold = (thresholdPercent/100)*U_nom;
+        const nnChecked = document.getElementById('hvSequenceCheck').checked;
+
+        const ids = [['a1a2','a1b2','a1c2'],['b1a2','b1b2','b1c2'],['c1a2','c1b2','c1c2']];
+        const U = [];
+        for(let i=0;i<3;i++){
+            const row=[];
+            for(let j=0;j<3;j++){
+                let v=parseFloat(document.getElementById(ids[i][j]).value);
+                if(isNaN(v)) v=0;
+                row.push(v);
+            }
+            U.push(row);
+        }
+        const perms = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+        const permDesc = ['A1-A2, B1-B2, C1-C2','A1-A2, B1-C2, C1-B2','A1-B2, B1-A2, C1-C2',
+                         'A1-B2, B1-C2, C1-A2','A1-C2, B1-A2, C1-B2','A1-C2, B1-B2, C1-A2'];
+
+        let sums = perms.map(p => p.reduce((s, idx, i) => s + U[i][idx], 0));
+        let bestIdx = 0;
+        let bestSum = sums[0];
+        for(let p=1; p<sums.length; p++){
+            if(sums[p] < bestSum){
+                bestSum = sums[p];
+                bestIdx = p;
+            }
+        }
+        const bestPerm = perms[bestIdx];
+        let sortedSums = [...sums].sort((a,b)=>a-b);
+        let secondBest = sortedSums[1];
+        let confidence = (secondBest > 0) ? (bestSum / secondBest) : 0;
+        const output = document.getElementById('result');
+        const phase = ['A','B','C'];
+        let fixedPoints = 0;
+        let swappedIndices = [];
+        for(let i=0;i<3;i++){
+            if(bestPerm[i] === i) fixedPoints++;
+            else swappedIndices.push(i);
+        }
+        let suggestion = '';
+        let warning = '';
+        if(fixedPoints === 3){
+            if(bestSum <= threshold){
+                suggestion = `✅ <span class="success">Фазы совпадают!</span><br>Трансформаторы готовы к параллельной работе.`;
+            } else {
+                suggestion = `✅ <span class="success">Фазы совпадают</span> (порядок фаз правильный).<br>
+                    Однако сумма напряжений (${bestSum.toFixed(1)} В) превышает допустимый порог (${threshold.toFixed(1)} В).<br>
+                    Проверьте соответствие коэффициентов трансформации и положения ПБВ.`;
+            }
+        } else if(fixedPoints === 1){
+            const idx1 = swappedIndices[0];
+            const idx2 = swappedIndices[1];
+            suggestion = `🔧 Обнаружена перестановка фаз <span class="highlight">${phase[idx1]}</span> и <span class="highlight">${phase[idx2]}</span> на стороне НН.<br>
+                Поменяйте их местами на втором трансформаторе и повторите измерения.`;
+        } else if(fixedPoints === 0){
+            if(nnChecked){
+                suggestion = `🔄 Обнаружен циклический сдвиг, но чередование на НН одинаково.<br>
+                    <span class="highlight">Поменяйте две любые фазы на ВН</span> и повторите измерения.`;
+            } else {
+                suggestion = `🔄 Обнаружен циклический сдвиг на НН.<br>
+                    <span class="highlight">Поменяйте две любые фазы на НН</span>, затем повторите измерения.<br>
+                    Если чередование на НН одинаково, отметьте галочку и пересчитайте.`;
+            }
+        } else {
+            suggestion = '⚠️ Неизвестный тип рассогласования. Повторите измерения!';
+        }
+        if(confidence > 0.8 && fixedPoints !== 3){
+            warning = `<span class="warning">⚠️ Внимание: разница между наилучшим и вторым вариантом мала (отношение ${(confidence*100).toFixed(0)}%).<br>
+                Возможна ошибка в измерениях. Рекомендуется перепроверить напряжения.</span><br><br>`;
+        }
+        let sumTable = '<br><b>Сравнение вариантов:</b><br><table style="width:auto;font-size:0.9rem;">';
+        for(let p=0;p<perms.length;p++){
+            const mark = (p===bestIdx)?' ✔':'';
+            const cls = (p===bestIdx)?'style="background:#d5f5e3;font-weight:bold;"':'';
+            sumTable += `<tr ${cls}><td>${permDesc[p]}</td><td>${sums[p].toFixed(1)} В${mark}</td></tr>`;
+        }
+        sumTable += '</table>';
+        let matrix = '<br><b>Введённые напряжения:</b><br>';
+        for(let i=0;i<3;i++){
+            matrix += `${phase[i]}1: `;
+            for(let j=0;j<3;j++){
+                const val = U[i][j];
+                const style = (j===bestPerm[i])?'style="font-weight:bold;background:#d5f5e3;"':'';
+                matrix += `<span ${style}>${phase[j]}2 = ${val.toFixed(1)} В</span>; `;
+            }
+            matrix += '<br>';
+        }
+        output.innerHTML = `
+            ${warning}
+            <div style="font-size:1.1rem;">${suggestion}</div>
+            <hr>
+            ${matrix}
+            ${sumTable}
+            <div style="margin-top:8px;font-size:0.85rem;color:#64748b;">
+                Порог (ПБВ): ${threshold.toFixed(1)} В (${thresholdPercent}% от Uном = ${U_nom} В)
+                ${nnChecked ? ' | Чередование НН: ✅' : ''}
+            </div>
+        `;
+    }
+       function openModal() {
+        document.getElementById('installModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+        document.getElementById('installModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+       document.getElementById('installModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+       document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+       function autoCheck() { checkConditions(); }
+    document.addEventListener('DOMContentLoaded', function(){
+        const sel = document.getElementById('unomSelect');
+        const cust = document.getElementById('unomCustom');
+        sel.addEventListener('change', function(){
+            cust.style.display = (this.value==='custom')?'inline-block':'none';
+        });
+        const fields = ['hv1','lv1','hv2','lv2','vh1','vl1','vh2','vl2','uk1','uk2','s1','s2'];
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                el.addEventListener('input', autoCheck);
+                el.addEventListener('change', autoCheck);
+            }
+        });
+        autoCheck();
+    });
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then(() => console.log('SW registered'))
+            .catch(err => console.warn('SW registration failed:', err));
+    }
+</script>
+</body>
+</html>
